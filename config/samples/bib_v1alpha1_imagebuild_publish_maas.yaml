@@ -1,0 +1,35 @@
+apiVersion: bib.cluster.x-k8s.io/v1alpha1
+kind: ImageBuild
+metadata:
+  name: ubuntu-maas-golden-k1.32
+spec:
+  baseImage: "ubuntu:22.04"
+  provisioner:
+    ansible:
+      repo: "https://github.com/zarcen/bib-operator.git"
+      branch: "main"
+      playbook: "ansible/samples/install-k8s.yml"
+      extraVars:
+        kubernetes_deb_version: "1.32.9-1.1"
+        kubernetes_deb_gpg_key: "https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key"
+        kubernetes_keyring_path: "/etc/apt/keyrings/kubernetes-apt-keyring.gpg"
+        kubernetes_deb_repo: "[signed-by={{ kubernetes_keyring_path }}] https://pkgs.k8s.io/core:/stable:/v1.32/deb"
+        kernel_modules:
+          - br_netfilter
+          - ip_vs
+        kubelet_config:
+          cgroupDriver: "systemd"
+          maxPods: 110
+          failSwapOn: false
+  output:
+    pvc:
+      name: "build-artifacts-pvc"
+    imageName: "ubuntu-2204-full"
+    formats:
+      - tgz
+      - qcow2
+  publish:
+    maas:
+      apiUrl: "http://10.0.1.10/MAAS"
+      imageName: "custom/ubuntu-custom"
+      credentialsSecretName: "maas-api-key"

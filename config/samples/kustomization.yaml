@@ -1,0 +1,6 @@
+## Append samples of your project ##
+resources:
+- bib_v1alpha1_imagebuild.yaml
+- bib_v1alpha1_imagebuild_publish_ami.yaml
+- bib_v1alpha1_imagebuild_publish_maas.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

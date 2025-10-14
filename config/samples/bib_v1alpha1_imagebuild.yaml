@@ -1,0 +1,33 @@
+apiVersion: bib.cluster.x-k8s.io/v1alpha1
+kind: ImageBuild
+metadata:
+  name: ubuntu-golden-k1.32
+  namespace: default
+spec:
+  arch: "amd64"
+  baseImage: "ghcr.io/zarcen/bib-operator/maas-ubuntu-golden:22.04"
+  baseImagePullSecretName: "ghcr-pull-secret"
+  # provisioner:
+  #   ansible:
+  #     repo: "https://github.com/kubernetes-sigs/image-builder.git"
+  #     branch: "main"
+  #     playbook: "images/capi/ansible/node.yml"
+  #     # You can use complex, nested structures for ansible extra variables over --extra-vars
+  #     extraVars:
+  #       kubernetes_deb_version: "1.32.9-1.1"
+  #       kubernetes_deb_gpg_key: "https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key"
+  #       kubernetes_keyring_path: "/etc/apt/keyrings/kubernetes-apt-keyring.gpg"
+  #       kubernetes_deb_repo: "[signed-by={{ kubernetes_keyring_path }}] https://pkgs.k8s.io/core:/stable:/v1.32/deb"
+  #       kernel_modules:
+  #         - br_netfilter
+  #         - ip_vs
+  #       kubelet_config:
+  #         cgroupDriver: "systemd"
+  #         maxPods: 110
+  #         failSwapOn: false
+  output:
+    pvc:
+      name: "build-artifacts-pvc"
+    imageName: "ubuntu-2204-full"
+    formats:
+      - tgz
