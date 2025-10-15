@@ -7,12 +7,12 @@ spec:
   arch: "amd64"
   baseImage: "ghcr.io/zarcen/bib-operator/maas-ubuntu-golden:22.04"
   baseImagePullSecretName: "ghcr-pull-secret"
-  # provisioner:
-  #   ansible:
-  #     repo: "https://github.com/kubernetes-sigs/image-builder.git"
-  #     branch: "main"
-  #     playbook: "images/capi/ansible/node.yml"
-  #     # You can use complex, nested structures for ansible extra variables over --extra-vars
+  provisioner:
+    ansible:
+      repo: "https://github.com/zarcen/bib-operator"
+      branch: "main"
+      playbook: "sample/ansible/ansible.yml"
+      # You can use complex, nested structures for ansible extra variables over --extra-vars
   #     extraVars:
   #       kubernetes_deb_version: "1.32.9-1.1"
   #       kubernetes_deb_gpg_key: "https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key"

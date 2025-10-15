@@ -211,12 +211,19 @@ func (r *ImageBuildReconciler) constructBuilderPod(_ context.Context, imageBuild
 		})
 	}
 
+	// Create a nodeSelector map based on the requested architecture.
+	nodeSelector := make(map[string]string)
+	if imageBuild.Spec.Architecture != "" {
+		nodeSelector["kubernetes.io/arch"] = imageBuild.Spec.Architecture
+	}
+
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      podName,
 			Namespace: imageBuild.Namespace,
 		},
 		Spec: corev1.PodSpec{
+			NodeSelector:  nodeSelector,
 			RestartPolicy: corev1.RestartPolicyNever,
 			SecurityContext: &corev1.PodSecurityContext{
 				RunAsUser: &runAsUser,

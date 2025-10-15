@@ -13,6 +13,7 @@ RUN apt-get update && \
         python3-pip \
         # Main build tools
         ansible-core \
+        ansible \
         buildah \
         qemu-utils \
         libguestfs-tools \
