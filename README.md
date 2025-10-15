@@ -55,3 +55,34 @@ bib-operator/
 ├── Makefile
 └── Tiltfile                         # For local development
 ```
+
+---
+## Local Development
+
+Setting up a local development environment is streamlined with `kind` and `Tilt` for a fast feedback loop.
+
+### Prerequisites
+* [Go](https://golang.org/) (1.24+)
+* [Docker](https://www.docker.com/) (or another container runtime like Colima)
+* [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+* [Tilt](https://tilt.dev/)
+
+### Setup
+
+1.  **Create a local Kubernetes cluster using `kind`**:
+    The project `Makefile` contains helpers for this. This command will create a new `kind` cluster ready for development.
+    ```bash
+    make kind-cluster
+    ```
+
+2.  **Start the development environment with Tilt**:
+    This command starts the Tilt server, which builds and deploys the operator to your `kind` cluster. It will open a web UI and automatically update your running controller whenever you save a change to a Go file.
+    ```bash
+    tilt up
+    ```
+
+3.  **Clean up**:
+    When you're finished, stop the Tilt server (`Ctrl+C`) and delete the local cluster.
+    ```bash
+    make kind-delete
+    ```
