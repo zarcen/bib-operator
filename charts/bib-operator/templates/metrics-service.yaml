@@ -1,0 +1,20 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "bib-operator.fullname" . }}-metrics
+  labels:
+    {{- include "bib-operator.labels" . | nindent 4 }}
+  {{- with .Values.metrics.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ports:
+    - name: https
+      port: 8443
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/name: {{ include "bib-operator.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

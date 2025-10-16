@@ -1,0 +1,64 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  {{ include "bib-operator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "bib-operator.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "bib-operator.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  replicas: {{ .Values.manager.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "bib-operator.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ include "bib-operator.serviceAccountName" . }}
+      securityContext:
+        # Projects are configured by default to adhere to the "restricted" Pod Security Standards.
+        # This ensures that deployments meet the highest security requirements for Kubernetes.
+        # For more details, see: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - command:
+        - /manager
+        args:
+            - "--leader-elect"
+            - --health-probe-bind-address=:8081
+            {{- if .Values.metrics.enabled }}
+            - "--metrics-bind-address=:{{ .Values.metrics.port }}"
+            {{- end }}
+        image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag }}"
+        name: manager
+        ports:
+            - containerPort: {{ .Values.metrics.port }}
+              name: metrics
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - "ALL"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          {{- toYaml .Values.manager.resources | nindent 10 }}
+        volumeMounts: []
+      volumes: []
+      terminationGracePeriodSeconds: 10

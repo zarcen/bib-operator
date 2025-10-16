@@ -1,0 +1,368 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.17.2
+  name: imagebuilds.bib.cluster.x-k8s.io
+spec:
+  group: bib.cluster.x-k8s.io
+  names:
+    kind: ImageBuild
+    listKind: ImageBuildList
+    plural: imagebuilds
+    singular: imagebuild
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.baseImage
+      name: BaseImage
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Ready')].reason
+      name: Status
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ImageBuild is the Schema for the imagebuilds API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ImageBuildSpec defines the desired state of ImageBuild.
+            properties:
+              arch:
+                default: amd64
+                description: |-
+                  Architecture specifies the target architecture for the build.
+                  Supported values are "amd64" and "arm64".
+                enum:
+                - amd64
+                - arm64
+                type: string
+              baseImage:
+                description: BaseImage is the starting container image for the build.
+                type: string
+              baseImagePullSecretName:
+                description: |-
+                  BaseImagePullSecretName is the name of a 'kubernetes.io/dockerconfigjson' secret
+                  to use for pulling the BaseImage from a private registry.
+                type: string
+              output:
+                description: Output defines where the final artifacts should be stored.
+                properties:
+                  formats:
+                    default:
+                    - tgz
+                    - qcow2
+                    description: |-
+                      Formats is the list of artifact formats to produce.
+                      Supported values are "tgz" (for a .tar.gz rootfs archive) and "qcow2".
+                      Defaults to ["tgz", "qcow2"] if not specified.
+                    items:
+                      description: OutputFormat defines the supported artifact formats.
+                      enum:
+                      - tgz
+                      - qcow2
+                      type: string
+                    type: array
+                  imageName:
+                    description: |-
+                      ImageName is a base name for the output files (e.g., "ubuntu-2204-kube-1.29").
+                      Not used for the Registry output type, as the name is part of the destination.
+                    type: string
+                  objectStorage:
+                    description: ObjectStorageOutput defines an S3-compatible bucket
+                      as the output destination.
+                    properties:
+                      bucket:
+                        description: Bucket is the name of the S3 bucket to upload
+                          to.
+                        type: string
+                      credentialsSecretName:
+                        description: |-
+                          CredentialsSecretName is the name of a Secret containing the access credentials.
+                          The secret must contain keys `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
+                        type: string
+                      region:
+                        description: Region for the bucket.
+                        type: string
+                    required:
+                    - bucket
+                    - credentialsSecretName
+                    type: object
+                  pvc:
+                    description: PVCOutput defines a PersistentVolumeClaim as the
+                      output destination.
+                    properties:
+                      createIfMissing:
+                        default: false
+                        description: CreateIfMissing, if true, instructs the operator
+                          to create the PVC if it does not exist.
+                        type: boolean
+                      name:
+                        description: Name of the PersistentVolumeClaim in the same
+                          namespace.
+                        type: string
+                      subPath:
+                        description: |-
+                          SubPath is an optional path within the PVC to store artifacts.
+                          If not specified, the operator will create a default path in the format "<namespace>/<imagebuild-name>".
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  registry:
+                    description: RegistryOutput defines a container image registry
+                      as the output destination.
+                    properties:
+                      destination:
+                        description: Destination is the full destination path for
+                          the container image (e.g., "quay.io/my-org/my-image:latest").
+                        type: string
+                      pullSecretName:
+                        description: PullSecretName is the name of a 'kubernetes.io/dockerconfigjson'
+                          secret for registry authentication.
+                        type: string
+                    required:
+                    - destination
+                    - pullSecretName
+                    type: object
+                type: object
+                x-kubernetes-validations:
+                - message: exactly one of pvc, objectStorage, or registry must be
+                    specified
+                  rule: '(has(self.pvc) ? 1 : 0) + (has(self.objectStorage) ? 1 :
+                    0) + (has(self.registry) ? 1 : 0) == 1'
+              provisioner:
+                description: |-
+                  Provisioner defines the build steps. This is optional.
+                  If omitted, the base image's filesystem will be used directly.
+                properties:
+                  ansible:
+                    description: AnsibleSpec defines the parameters for Ansible-based
+                      provisioning.
+                    properties:
+                      branch:
+                        default: main
+                        description: Branch is the Git branch to check out. Defaults
+                          to "main".
+                        type: string
+                      credentialsSecretName:
+                        description: |-
+                          CredentialsSecretName is the name of a Secret used for pulling the Git repository.
+                          The secret must be of type 'kubernetes.io/ssh-auth' or 'kubernetes.io/basic-auth'.
+                        type: string
+                      extraVars:
+                        description: |-
+                          ExtraVars is a raw JSON object of key-value pairs to be passed as extra variables to the playbook.
+                          Corresponds to the --extra-vars or -e flag.
+                        x-kubernetes-preserve-unknown-fields: true
+                      playbook:
+                        description: Playbook is the path to the main playbook file
+                          within the repo.
+                        type: string
+                      repo:
+                        description: Repo is the URL of a Git repository containing
+                          Ansible playbooks.
+                        type: string
+                    required:
+                    - playbook
+                    - repo
+                    type: object
+                  packer:
+                    description: '[Future Support] PackerSpec defines the parameters
+                      for Packer-based provisioning.'
+                    properties:
+                      branch:
+                        description: Branch is the Git branch to check out.
+                        type: string
+                      credentialsSecretName:
+                        description: |-
+                          CredentialsSecretName is the name of a Secret used for pulling the Git repository.
+                          The secret must be of type 'kubernetes.io/ssh-auth' or 'kubernetes.io/basic-auth'.
+                        type: string
+                      repo:
+                        description: Repo is the URL of a Git repository containing
+                          Packer templates.
+                        type: string
+                      templatePath:
+                        description: TemplatePath is the path to the Packer template
+                          file (HCL or JSON) within the repo.
+                        type: string
+                    required:
+                    - repo
+                    - templatePath
+                    type: object
+                type: object
+                x-kubernetes-validations:
+                - message: at most one of ansible or packer can be specified
+                  rule: '(has(self.ansible) ? 1 : 0) + (has(self.packer) ? 1 : 0)
+                    <= 1'
+              publish:
+                description: |-
+                  Publish defines the final infrastructure provider target. This is optional.
+                  If omitted, only the artifacts in 'output' will be created.
+                properties:
+                  aws:
+                    description: AWSPublishSpec defines the parameters for publishing
+                      the image as an AMI in AWS.
+                    properties:
+                      amiName:
+                        description: AMIName is the name for the created AMI.
+                        type: string
+                      credentialsSecretName:
+                        description: |-
+                          CredentialsSecretName is the name of a Secret containing the AWS credentials.
+                          The secret must contain keys `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
+                        type: string
+                      instanceType:
+                        description: |-
+                          InstanceType is the instance type to use for the import task. e.g. "t3.small".
+                          See https://docs.aws.amazon.com/vm-import/latest/userguide/vmie_prereqs.html#vmimport-instance-types
+                        type: string
+                      region:
+                        description: Region is the AWS region where the AMI will be
+                          created.
+                        type: string
+                      sourceS3Bucket:
+                        description: |-
+                          SourceS3Bucket is the name of an S3 bucket the operator can use to temporarily
+                          upload the qcow2 image for the AMI import process.
+                        type: string
+                    required:
+                    - amiName
+                    - credentialsSecretName
+                    - instanceType
+                    - region
+                    - sourceS3Bucket
+                    type: object
+                  maas:
+                    description: MaaSPublishSpec defines the parameters for publishing
+                      the image to a MaaS server.
+                    properties:
+                      apiUrl:
+                        description: APIURL is the URL of the MaaS API endpoint (e.g.,
+                          "http://maas.example.com/MAAS").
+                        type: string
+                      credentialsSecretName:
+                        description: |-
+                          CredentialsSecretName is the name of a Secret containing the MaaS API key.
+                          The secret must contain a key named `MAAS_API_KEY`.
+                        type: string
+                      imageName:
+                        description: ImageName is the name for the image being uploaded
+                          to MaaS.
+                        type: string
+                    required:
+                    - apiUrl
+                    - credentialsSecretName
+                    - imageName
+                    type: object
+                type: object
+                x-kubernetes-validations:
+                - message: exactly one of aws or maas must be specified
+                  rule: '(has(self.aws) ? 1 : 0) + (has(self.maas) ? 1 : 0) == 1'
+            required:
+            - baseImage
+            - output
+            type: object
+          status:
+            description: ImageBuildStatus defines the observed state of ImageBuild.
+            properties:
+              builderPodName:
+                description: BuilderPodName is the name of the pod executing the build.
+                type: string
+              completionTime:
+                description: CompletionTime is the time at which the build pod finished.
+                format: date-time
+                type: string
+              conditions:
+                description: Conditions represent the latest available observations
+                  of an ImageBuild's state.
+                items:
+                  description: Condition defines an observation of a Cluster API resource
+                    operational state.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed. If that is not known, then using the time when
+                        the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This field may be empty.
+                      maxLength: 10240
+                      minLength: 1
+                      type: string
+                    reason:
+                      description: |-
+                        reason is the reason for the condition's last transition in CamelCase.
+                        The specific API may choose whether or not this field is considered a guaranteed API.
+                        This field may be empty.
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                    severity:
+                      description: |-
+                        severity provides an explicit classification of Reason code, so the users or machines can immediately
+                        understand the current situation and act accordingly.
+                        The Severity field MUST be set only when Status=False.
+                      maxLength: 32
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: |-
+                        type of condition in CamelCase or in foo.example.com/CamelCase.
+                        Many .condition.type values are consistent across resources like Available, but because arbitrary conditions
+                        can be useful (see .node.status.conditions), the ability to deconflict is important.
+                      maxLength: 256
+                      minLength: 1
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - status
+                  - type
+                  type: object
+                type: array
+              outputURL:
+                description: OutputURL is the final location of the built artifact,
+                  such as an S3 URL or container image reference.
+                type: string
+              phase:
+                description: Phase is a simple, high-level summary of the current
+                  build state.
+                type: string
+              startTime:
+                description: StartTime is the time at which the build pod was created.
+                format: date-time
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

@@ -11,7 +11,7 @@ spec:
     ansible:
       repo: "https://github.com/zarcen/bib-operator"
       branch: "main"
-      playbook: "sample/ansible/ansible.yml"
+      playbook: "sample/ansible/capi.yml"
       # You can use complex, nested structures for ansible extra variables over --extra-vars
   #     extraVars:
   #       kubernetes_deb_version: "1.32.9-1.1"

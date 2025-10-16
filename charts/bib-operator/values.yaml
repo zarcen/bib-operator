@@ -1,0 +1,35 @@
+# Default values for bib-operator.
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Configuration for the operator manager pod
+manager:
+  image:
+    repository: ghcr.io/zarcen/bib-operator
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  resources:
+    limits:
+      cpu: 500m
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 64Mi
+
+# Configuration for the builder pods created by the operator
+builder:
+  image:
+    repository: ghcr.io/zarcen/bib-operator/builder
+    tag: "0.1.1"
+
+serviceAccount:
+  create: true
+  name: bib-operator
+
+metrics:
+  enabled: true
+  port: 8443
+  service:
+    annotations: {}

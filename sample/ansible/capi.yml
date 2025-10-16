@@ -1,0 +1,11 @@
+---
+- hosts: all
+  become: yes
+
+  tasks:
+    - include_role:
+        name: node
+    - include_role:
+        name: kubernetes
+    - include_role:
+        name: containerd

@@ -1,0 +1,8 @@
+---
+# This is a must for images built from container engine like Docker, Podman, etc.
+- name: Ensure /etc/resolv.conf is a symlink for systemd-resolved
+  ansible.builtin.file:
+    src: /run/systemd/resolve/stub-resolv.conf
+    dest: /etc/resolv.conf
+    state: link
+    force: yes

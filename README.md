@@ -86,3 +86,18 @@ Setting up a local development environment is streamlined with `kind` and `Tilt`
     ```bash
     make kind-delete
     ```
+
+## The Builder API
+
+To support "Bring Your Own Image" (BYOI), the `bib-operator` defines a stable contract for how it passes build parameters to a builder container. Any container image that respects this contract can be used as a builder.
+
+The operator passes all configuration to the builder pod via **environment variables**. A compatible builder image must be able to read its instructions from the following variables:
+
+| Variable | Required? | Description |
+| :--- | :--- | :--- |
+| `BASE_IMAGE` | Yes | The source container image for the build (e.g., `ubuntu:24.04`). |
+| `ARCHITECTURE` | Yes | The target architecture for the build (e.g., `amd64`, `arm64`). |
+| `OUTPUT_FILENAME`| Optional | The base filename for the output artifacts (e.g., `ubuntu-2404-golden`). |
+| `ANSIBLE_GIT_REPO` | Optional | The Git repository URL for the Ansible provisioner. |
+| `ANSIBLE_GIT_BRANCH`| Optional | The Git branch to clone for the Ansible provisioner. |
+| `ANSIBLE_PLAYBOOK` | Optional | The path to the main Ansible playbook within the Git repository. |

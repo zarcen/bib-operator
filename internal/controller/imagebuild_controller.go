@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
@@ -41,7 +42,8 @@ var builderPodPrefix = "imgbldr-"
 // ImageBuildReconciler reconciles a ImageBuild object
 type ImageBuildReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme       *runtime.Scheme
+	BuilderImage string
 }
 
 //+kubebuilder:rbac:groups=bib.cluster.x-k8s.io,resources=imagebuilds,verbs=get;list;watch;create;update;patch;delete
@@ -178,9 +180,9 @@ func (r *ImageBuildReconciler) constructBuilderPod(_ context.Context, imageBuild
 		// Check which type of provisioner is set (e.g., Ansible)
 		if imageBuild.Spec.Provisioner.Ansible != nil {
 			envVars = append(envVars,
-				corev1.EnvVar{Name: "GIT_REPO", Value: imageBuild.Spec.Provisioner.Ansible.Repo},
-				corev1.EnvVar{Name: "GIT_BRANCH", Value: imageBuild.Spec.Provisioner.Ansible.Branch},
-				corev1.EnvVar{Name: "PLAYBOOK", Value: imageBuild.Spec.Provisioner.Ansible.Playbook},
+				corev1.EnvVar{Name: "ANSIBLE_GIT_REPO", Value: imageBuild.Spec.Provisioner.Ansible.Repo},
+				corev1.EnvVar{Name: "ANSIBLE_GIT_BRANCH", Value: imageBuild.Spec.Provisioner.Ansible.Branch},
+				corev1.EnvVar{Name: "ANSIBLE_PLAYBOOK", Value: imageBuild.Spec.Provisioner.Ansible.Playbook},
 			)
 			// Add a volume for the git repo
 			volumes = append(volumes, corev1.Volume{
@@ -191,6 +193,10 @@ func (r *ImageBuildReconciler) constructBuilderPod(_ context.Context, imageBuild
 				Name:      "source-repo",
 				MountPath: "/source",
 			})
+		}
+		if imageBuild.Spec.Provisioner.Packer != nil {
+			// return not implemented error
+			return nil, errors.New("packer provisioner is not implemented yet")
 		}
 	}
 
@@ -231,7 +237,7 @@ func (r *ImageBuildReconciler) constructBuilderPod(_ context.Context, imageBuild
 			Containers: []corev1.Container{
 				{
 					Name:  "builder",
-					Image: "ghcr.io/zarcen/bib-operator/builder:0.1.1",
+					Image: r.BuilderImage,
 					SecurityContext: &corev1.SecurityContext{
 						Privileged: &privileged,
 					},
