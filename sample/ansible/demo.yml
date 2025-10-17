@@ -1,0 +1,16 @@
+---
+- hosts: all
+  become: yes
+
+  tasks:
+    - name: Create a demo directory
+      ansible.builtin.file:
+        path: /opt/demo
+        state: directory
+        mode: '0755'
+
+    - name: Create a helloworld file with content
+      ansible.builtin.copy:
+        content: "Hello, World from bib-operator!"
+        dest: /opt/demo/helloworld.txt
+        mode: '0644'

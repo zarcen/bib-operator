@@ -1,8 +1,38 @@
 ---
-# This is a must for images built from container engine like Docker, Podman, etc.
-- name: Ensure /etc/resolv.conf is a symlink for systemd-resolved
-  ansible.builtin.file:
-    src: /run/systemd/resolve/stub-resolv.conf
-    dest: /etc/resolv.conf
-    state: link
-    force: yes
+# This is simply a sample playbook to install Kubernetes binaries on premise of a debian-based OS.
+# You should define your own playbook to install Kubernetes binaries on your target OS.
+- name: Download the Kubernetes GPG key and de-armor it
+  ansible.builtin.shell:
+    cmd: "curl -fsSL https://pkgs.k8s.io/core:/stable:/{{ kubernetes_series }}/deb/Release.key | gpg --dearmor -o /usr/share/keyrings/kubernetes-archive-keyring.gpg"
+  args:
+    creates: /usr/share/keyrings/kubernetes-archive-keyring.gpg
+
+- name: Add the Kubernetes apt repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ kubernetes_series }}/deb/ /"
+    state: present
+    filename: kubernetes
+    update_cache: yes
+
+- name: Install Kubernetes binaries with a pinned version
+  ansible.builtin.apt:
+    name:
+      - "kubelet={{ kubernetes_deb_version }}"
+      - "kubeadm={{ kubernetes_deb_version }}"
+      - "kubectl={{ kubernetes_deb_version }}"
+      - "kubernetes-cni={{ kubernetes_cni_deb_version | default(kubernetes_deb_version) }}"
+    state: present
+
+- name: Hold Kubernetes binaries to prevent unintended upgrades
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop:
+    - kubelet
+    - kubeadm
+    - kubectl
+    - kubernetes-cni
+
+- name: Clean up apt cache
+  ansible.builtin.apt:
+    autoclean: yes
