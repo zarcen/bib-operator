@@ -1,0 +1,8 @@
+
+---
+containerd_config_file: /etc/containerd/config.toml
+crictl_version: "1.32.0"
+containerd_version: "1.7.20"
+containerd_sha256: "e09410787b6f392748959177a84e024424f75d7aff33ea1c5b783f2260edce67"
+containerd_url: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
+
