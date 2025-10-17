@@ -1,0 +1,11 @@
+[Unit]
+Description=Load mst_pciconf kernel module
+DefaultDependencies=no
+Before=sysinit.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/modprobe mst_pciconf
+
+[Install]
+WantedBy=sysinit.target
