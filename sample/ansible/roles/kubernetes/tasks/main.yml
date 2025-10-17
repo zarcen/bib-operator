@@ -17,10 +17,10 @@
 - name: Install Kubernetes binaries with a pinned version
   ansible.builtin.apt:
     name:
-      - "kubelet={{ kubernetes_deb_version }}"
-      - "kubeadm={{ kubernetes_deb_version }}"
-      - "kubectl={{ kubernetes_deb_version }}"
-      - "kubernetes-cni={{ kubernetes_cni_deb_version | default(kubernetes_deb_version) }}"
+      - kubelet={{ kubernetes_deb_version }}
+      - kubeadm={{ kubernetes_deb_version }}
+      - kubectl={{ kubernetes_deb_version }}
+      - kubernetes-cni{{ '='+kubernetes_cni_deb_version if kubernetes_cni_deb_version else '' }}
     state: present
 
 - name: Hold Kubernetes binaries to prevent unintended upgrades
@@ -32,7 +32,3 @@
     - kubeadm
     - kubectl
     - kubernetes-cni
-
-- name: Clean up apt cache
-  ansible.builtin.apt:
-    autoclean: yes

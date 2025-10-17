@@ -34,6 +34,9 @@ echo "Created container: $container"
 mount_path=$(buildah mount "$container")
 echo "Container mounted at: $mount_path"
 
+echo "Preparing chroot environment with device nodes..."
+mount --bind /dev "${mount_path}/dev"
+
 # Clone the provisioning repository
 # The git-sync init container will handle this in the final version.
 # For now, we'll do it here if the repo is specified.
@@ -46,8 +49,11 @@ fi
 if [ -n "$ANSIBLE_PLAYBOOK" ]; then
     echo "Running Ansible playbook ${ANSIBLE_PLAYBOOK}..."
     # The --connection=chroot tells Ansible to run against the mounted filesystem
-    ansible-playbook --connection=chroot --inventory="${mount_path}" "/source/${ANSIBLE_PLAYBOOK}"
+    ansible-playbook --connection=chroot --inventory="${mount_path}," "/source/${ANSIBLE_PLAYBOOK}"
 fi
+
+echo "Cleaning up chroot environment..."
+umount "${mount_path}/dev"
 
 # Unmount, create tarball, and clean up
 echo "Creating TGZ archive at /output/${OUTPUT_FILENAME}.tgz"
